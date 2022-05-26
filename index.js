@@ -164,6 +164,39 @@ async function run() {
             }
         });
 
+        // Get Orders (Specific User)
+        app.get('/order/:email', verifyJWT, async (req, res) => {
+            const requester = req.decoded.email;
+            const email = req.params.email;
+
+            if (requester === email) {
+                const filter = {
+                    email: email
+                }
+                const cursor = orderCollection.find(filter).sort({ _id: -1 });
+                const result = await cursor.toArray();
+
+                return res.send(result);
+            }
+            return res.status(403).send({ message: 'forbidden' });
+        })
+
+        // Cancel Order
+        app.delete('/order/:email', verifyJWT, async (req, res) => {
+            const requester = req.decoded.email;
+            const email = req.params.email;
+            const { id } = req.body;
+            const query = {
+                _id: ObjectId(id)
+            }
+
+            if (requester === email) {
+                const result = await orderCollection.deleteOne(query);
+                return res.send(result);
+            }
+            return res.status(403).send({ message: 'forbidden' });
+        });
+
     } finally {
         // await client.close();
     }
