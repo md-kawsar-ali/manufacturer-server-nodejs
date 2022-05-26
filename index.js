@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -179,7 +180,18 @@ async function run() {
                 return res.send(result);
             }
             return res.status(403).send({ message: 'forbidden' });
-        })
+        });
+
+        // Get Specific Order
+        app.get('/myorder/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = {
+                _id: ObjectId(id)
+            }
+
+            const result = await orderCollection.findOne(query);
+            res.send(result);
+        });
 
         // Cancel Order
         app.delete('/order/:email', verifyJWT, async (req, res) => {
@@ -195,6 +207,21 @@ async function run() {
                 return res.send(result);
             }
             return res.status(403).send({ message: 'forbidden' });
+        });
+
+        // Payment Intent
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const { price } = req.body;
+            const amount = parseFloat(price) * 100;
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ["card"]
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
         });
 
     } finally {
