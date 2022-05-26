@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 
 const app = express();
@@ -43,6 +43,7 @@ async function run() {
         await client.connect();
         const productCollection = client.db("AutimaPro").collection("products");
         const userCollection = client.db("AutimaPro").collection("user");
+        const orderCollection = client.db("AutimaPro").collection("order");
 
         const verifyAdmin = async (req, res, next) => {
             const requester = req.decoded.email;
@@ -79,7 +80,7 @@ async function run() {
             }
         });
 
-        // Get User
+        // Get Users
         app.get('/user', verifyJWT, verifyAdmin, async (req, res) => {
             const cursor = userCollection.find().sort({ '_id': -1 });
             const result = await cursor.toArray();
@@ -113,7 +114,7 @@ async function run() {
             res.send({ admin: isAdmin })
         })
 
-        // Get Product
+        // Get Products
         app.get('/product', async (req, res) => {
             const size = parseInt(req.query.size);
 
@@ -125,6 +126,42 @@ async function run() {
 
             const result = await productCollection.find().sort({ '_id': -1 }).toArray();
             return res.send(result);
+        });
+
+        // Get Product
+        app.get('/product/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = {
+                _id: ObjectId(id)
+            }
+
+            const result = await productCollection.findOne(query);
+            res.send(result);
+        });
+
+        // Place Order
+        app.post('/order', verifyJWT, async (req, res) => {
+            const order = req.body;
+            const filter = {
+                _id: ObjectId(order?.productId)
+            }
+
+            const product = await productCollection.findOne(filter);
+            const newQuantity = parseInt(product.quantity) - parseInt(order.quantity);
+            if (newQuantity) {
+                const updateDoc = {
+                    $set: {
+                        quantity: newQuantity
+                    }
+                }
+
+                const updated = await productCollection.updateOne(filter, updateDoc);
+
+                if (updated) {
+                    const result = await orderCollection.insertOne(order);
+                    res.send(result);
+                }
+            }
         });
 
     } finally {
