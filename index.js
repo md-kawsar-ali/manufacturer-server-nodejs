@@ -224,6 +224,26 @@ async function run() {
             });
         });
 
+        // Insert Payment Info in Order
+        app.put('/myorder/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const { transactionId, paid } = req.body;
+
+            const filter = {
+                _id: ObjectId(id)
+            }
+
+            const updateDoc = {
+                $set: {
+                    transactionId,
+                    paid
+                }
+            }
+
+            const result = await orderCollection.updateOne(filter, updateDoc, { upsert: true });
+            res.send(result);
+        })
+
     } finally {
         // await client.close();
     }
