@@ -45,6 +45,7 @@ async function run() {
         const productCollection = client.db("AutimaPro").collection("products");
         const userCollection = client.db("AutimaPro").collection("user");
         const orderCollection = client.db("AutimaPro").collection("order");
+        const reviewCollection = client.db("AutimaPro").collection("review");
 
         const verifyAdmin = async (req, res, next) => {
             const requester = req.decoded.email;
@@ -242,7 +243,21 @@ async function run() {
 
             const result = await orderCollection.updateOne(filter, updateDoc, { upsert: true });
             res.send(result);
-        })
+        });
+
+        // Get Review
+        app.get('/review', async (req, res) => {
+            const cursor = reviewCollection.find().sort({ '_id': -1 });
+            const result = await cursor.toArray();
+            res.send(result);
+        });
+
+        // Add Review
+        app.post('/review', verifyJWT, async (req, res) => {
+            const review = req.body;
+            const result = await reviewCollection.insertOne(review);
+            res.send(result);
+        });
 
     } finally {
         // await client.close();
