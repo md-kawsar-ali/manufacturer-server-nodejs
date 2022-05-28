@@ -141,6 +141,13 @@ async function run() {
             res.send(result);
         });
 
+        // Add Product
+        app.post('/product', verifyJWT, verifyAdmin, async (req, res) => {
+            const product = req.body;
+            const result = await productCollection.insertOne(product);
+            res.send(result);
+        });
+
         // Place Order
         app.post('/order', verifyJWT, async (req, res) => {
             const order = req.body;
