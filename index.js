@@ -89,6 +89,36 @@ async function run() {
             res.send(result);
         });
 
+        // Get Specific User
+        app.get('/user/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            if (email) {
+                const filter = {
+                    email: email
+                }
+                const result = await userCollection.findOne(filter);
+                res.send(result);
+            }
+        });
+
+        // Update Specific User
+        app.put('/user/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const userProfile = req.body;
+            if (email === req.decoded.email) {
+                const filter = {
+                    email: email
+                }
+
+                const updateDoc = {
+                    $set: userProfile
+                }
+
+                const result = await userCollection.updateOne(filter, updateDoc, { upsert: true });
+                res.send(result);
+            }
+        });
+
         // Make Admin
         app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
             const email = req.params.email;
