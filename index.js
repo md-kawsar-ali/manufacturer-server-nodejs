@@ -148,6 +148,17 @@ async function run() {
             res.send(result);
         });
 
+        // Delete Product
+        app.delete('/product/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = {
+                _id: ObjectId(id)
+            }
+
+            const result = await productCollection.deleteOne(filter);
+            res.send(result);
+        });
+
         // Place Order
         app.post('/order', verifyJWT, async (req, res) => {
             const order = req.body;
@@ -198,6 +209,13 @@ async function run() {
             }
 
             const result = await orderCollection.findOne(query);
+            res.send(result);
+        });
+
+        // Get Orders for Admin
+        app.get('/order', verifyJWT, verifyAdmin, async (req, res) => {
+            const cursor = orderCollection.find().sort({ _id: -1 });
+            const result = await cursor.toArray();
             res.send(result);
         });
 
